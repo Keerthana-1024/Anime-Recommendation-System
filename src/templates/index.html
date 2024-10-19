@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime Recommendation System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 10px;
+            background-color: #7f79793b;
+            /* background-image: "movies2.jpg"; */
+        }
+        h1, h2 {
+            color: #333;
+        }
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+        input[type="text"],
+        input[type="number"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .dropdown {
+            display: none;
+            margin-top: 10px;
+        }
+        .input-with-button {
+            position: relative;
+        }
+        .input-with-button button {
+            position: absolute;
+            right: 0;
+            top: 0;
+            height: 100%;
+            border: none;
+            background-color: #5cb85c;
+            color: white;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            padding: 10px 15px;
+        }
+        .input-with-button button:hover {
+            background-color: #4cae4c;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        th {
+            padding: 10px;
+            text-align: left;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(odd) {
+            background-color: #ffffff;
+        }
+        .header-anime-id { background-color: #4A90E2; }
+        .header-name { background-color: #E94E77; }
+        .header-genre { background-color: #F39C12; }
+        .header-rating { background-color: #2ECC71; }
+        .header-type { background-color: #8E44AD; }
+        .header-members { background-color: #D35400; }
+        .header-similarity { background-color: #34495E; } /* Added header similarity */
+        td {
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: left;
+        }
+    </style>
+    <script>
+        function toggleDropdown(id) {
+            const dropdown = document.getElementById(id);
+            dropdown.style.display = dropdown.style.display === 'none' || dropdown.style.display === '' ? 'block' : 'none';
+        }
+
+        function updateSelection(inputId, dropdownId) {
+            const input = document.getElementById(inputId);
+            const dropdown = document.getElementById(dropdownId);
+            const checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
+            const selectedValues = Array.from(checkboxes).filter(checkbox => checkbox.checked).map(checkbox => checkbox.value);
+            input.value = selectedValues.join(', ');
+        }
+    </script>
+</head>
+<body>
+    <h1>Anime Recommendation System</h1>
+
+    <form method="POST">
+        <label for="anime_name">Anime Name:</label>
+        <input type="text" id="anime_name" name="anime_name" value="{{ request.form.anime_name }}" required>
+
+        <label for="n_recs">Number of Recommendations:</label>
+        <input type="number" id="n_recs" name="n_recs" value="{{ request.form.n_recs }}" required>
+
+        <label for="min_rating">Minimum Rating (0-10):</label>
+        <input type="number" id="min_rating" name="min_rating" step="0.1" min="0" max="10" value="{{ request.form.min_rating }}">
+
+        <label for="genre">Genre:</label>
+        <div class="input-with-button">
+            <input type="text" id="genre" name="genre" value="{{ request.form.genre }}" readonly onclick="toggleDropdown('genreDropdown')">
+            <button type="button" onclick="toggleDropdown('genreDropdown')">Select Genre</button>
+        </div>
+        <div id="genreDropdown" class="dropdown">
+            <input type="checkbox" name="genre" value="Action" onclick="updateSelection('genre', 'genreDropdown')"> Action<br>
+            <input type="checkbox" name="genre" value="Adventure" onclick="updateSelection('genre', 'genreDropdown')"> Adventure<br>
+            <input type="checkbox" name="genre" value="Comedy" onclick="updateSelection('genre', 'genreDropdown')"> Comedy<br>
+            <input type="checkbox" name="genre" value="Drama" onclick="updateSelection('genre', 'genreDropdown')"> Drama<br>
+            <input type="checkbox" name="genre" value="Fantasy" onclick="updateSelection('genre', 'genreDropdown')"> Fantasy<br>
+            <input type="checkbox" name="genre" value="Romance" onclick="updateSelection('genre', 'genreDropdown')"> Romance<br>
+        </div>
+
+        <label for="anime_type">Anime Type:</label>
+        <div class="input-with-button">
+            <input type="text" id="anime_type" name="anime_type" value="{{ request.form.anime_type }}" readonly onclick="toggleDropdown('typeDropdown')">
+            <button type="button" onclick="toggleDropdown('typeDropdown')">Select Type</button>
+        </div>
+        <div id="typeDropdown" class="dropdown">
+            {% for type in types %}
+                <input type="checkbox" id="{{ type }}" name="anime_type" value="{{ type }}" onclick="updateSelection('anime_type', 'typeDropdown')">
+                <label for="{{ type }}">{{ type }}</label><br>
+            {% endfor %}
+        </div>
+
+        <button type="submit">Recommend</button>
+    </form>
+
+    {% if recommendations %}
+    <h2>Recommendations</h2>
+    <table>
+        <thead>
+            <tr>
+                <th class="header-anime-id">Anime ID</th>
+                <th class="header-name">Name</th>
+                <th class="header-genre">Genre</th>
+                <th class="header-rating">Rating</th>
+                <th class="header-type">Type</th>
+                <th class="header-members">Members</th>
+                <th class="header-similarity">Similarity Score</th> <!-- Added header for similarity score -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for anime in recommendations|sort(attribute='similarity_score', reverse=true) %} <!-- Sorting recommendations -->
+            <tr>
+                <td>{{ anime.anime_id }}</td>
+                <td>{{ anime.name }}</td>
+                <td>{{ anime.genre }}</td>
+                <td>{{ anime.rating }}</td>
+                <td>{{ anime.type }}</td>
+                <td>{{ anime.members }}</td>
+                <td>{{ anime.similarity_score }}</td> <!-- Similarity score now displayed -->
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</body>
+</html>
+
+
+
+
+
